@@ -1,0 +1,197 @@
+<!-- budgets/templates/budgets/edit_budget.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Budget bearbeiten{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Budget bearbeiten</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'budget_list' %}">Budgets</a></li>
+                    <li class="breadcrumb-item active">{{ budget.month|date:"F Y" }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="mb-3">Budget-Informationen</h5>
+                                {{ form|crispy }}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Kategorien</h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="add_category_btn">
+                                    <i class="bi bi-plus-lg me-1"></i> Kategorie hinzufügen
+                                </button>
+                            </div>
+
+                            <div id="category_formset">
+                                {{ formset.management_form }}
+
+                                {% for form in formset %}
+                                <div class="card mb-3 category-form">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.category|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.amount|as_crispy_field }}
+                                            </div>
+                                        </div>
+
+                                        {% if formset.can_delete %}
+                                        <div class="form-check">
+                                            {{ form.DELETE|as_crispy_field }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'budget_detail' budget.id %}" class="btn btn-outline-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Änderungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Aktuelles Budget</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Monat</span>
+                        <span class="fw-bold">{{ budget.month|date:"F Y" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Gesamtbetrag</span>
+                        <span class="fw-bold">{{ budget.total_amount|floatformat:2 }} €</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Anzahl Kategorien</span>
+                        <span class="fw-bold">{{ budget.categories.count }}</span>
+                    </div>
+
+                    <div class="progress mb-3" style="height: 10px;">
+                        {% if budget.percentage > 100 %}
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
+                        {% elif budget.percentage > 75 %}
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ budget.percentage }}%"></div>
+                        {% else %}
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ budget.percentage }}%"></div>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'budget_detail' budget.id %}" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-eye me-1"></i> Budget anzeigen
+                    </a>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Tipps</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-lightbulb text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Vergleich mit Vormonat</h6>
+                            <p class="mb-0 text-muted small">Berücksichtige deine Ausgaben aus dem Vormonat, um ein realistisches Budget zu erstellen.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-graph-up-arrow text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Kategorien priorisieren</h6>
+                            <p class="mb-0 text-muted small">Teile dein Budget zuerst für die wichtigsten Ausgaben ein (Wohnen, Lebensmittel).</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-piggy-bank text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Sparziele einbeziehen</h6>
+                            <p class="mb-0 text-muted small">Vergiss nicht, einen Teil deines Budgets für deine Sparziele zu reservieren.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kategorie-Formset dynamisch hinzufügen
+        const addCategoryBtn = document.getElementById('add_category_btn');
+        const categoryContainer = document.getElementById('category_formset');
+
+        if (addCategoryBtn && categoryContainer) {
+            addCategoryBtn.addEventListener('click', function() {
+                const forms = categoryContainer.getElementsByClassName('category-form');
+                const formNum = forms.length;
+                const totalForms = document.getElementById('id_budgetcategory_set-TOTAL_FORMS');
+
+                // Klone das letzte Formular
+                const newForm = forms[forms.length - 1].cloneNode(true);
+
+                // Aktualisiere IDs und Namen
+                let formRegex = RegExp(`budgetcategory_set-(\\d){1,}-`,'g');
+                newForm.innerHTML = newForm.innerHTML.replace(formRegex, `budgetcategory_set-${formNum}-`);
+
+                // Setze Werte zurück
+                const inputs = newForm.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.type === 'text' || input.type === 'number') {
+                        input.value = '';
+                    } else if (input.type === 'checkbox' && input.name.includes('DELETE')) {
+                        input.checked = false;
+                    }
+                });
+
+                // Füge das neue Formular hinzu
+                categoryContainer.appendChild(newForm);
+
+                // Aktualisiere den Zähler
+                totalForms.value = formNum + 1;
+            });
+        }
+    });
+</script>
+{% endblock %}

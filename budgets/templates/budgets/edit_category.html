@@ -1,0 +1,201 @@
+<!-- budgets/templates/budgets/edit_category.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kategorie bearbeiten{% endblock %}
+
+{% block extra_css %}
+<style>
+    .icon-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 10px;
+    }
+    .icon-item {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s;
+    }
+    .icon-item:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        border-color: var(--bs-primary);
+    }
+    .icon-item.selected {
+        background-color: rgba(var(--bs-primary-rgb), 0.2);
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+    }
+    .icon-item i {
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Kategorie bearbeiten</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'budget_list' %}">Budgets</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'category_list' %}">Kategorien</a></li>
+                    <li class="breadcrumb-item active">{{ category.name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="id_name" class="form-label">Kategoriename <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="id_name" name="name" value="{{ category.name }}" placeholder="z.B. Lebensmittel, Transport, Freizeit" required>
+                                <div class="invalid-feedback">
+                                    Bitte gib einen Namen für die Kategorie ein.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label class="form-label">Wähle ein Icon</label>
+                                <input type="hidden" name="icon" id="id_icon" value="{{ category.icon }}">
+
+                                <div class="icon-selector">
+                                    {% for icon in icons %}
+                                    <div class="icon-item {% if icon == category.icon %}selected{% endif %}" data-icon="{{ icon }}" onclick="selectIcon('{{ icon }}')">
+                                        <i class="bi bi-{{ icon }}"></i>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'category_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Änderungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Kategorieübersicht</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="category-icon me-3" style="width: 50px; height: 50px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-{{ category.icon }} fs-3"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ category.name }}</h5>
+                            <small class="text-muted">Icon: {{ category.icon }}</small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Anzahl Ausgaben</span>
+                        <span class="fw-bold">{{ category.expense_count }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Aktionen</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'category_list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-1"></i> Zurück zur Liste
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCategoryModal">
+                            <i class="bi bi-trash me-1"></i> Kategorie löschen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kategorie löschen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <p>Möchtest du die Kategorie "{{ category.name }}" wirklich löschen?</p>
+                {% if category.expense_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Diese Kategorie wird bei {{ category.expense_count }} Ausgaben verwendet. Beim Löschen werden diese Ausgaben keiner Kategorie mehr zugeordnet.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form method="post" action="{% url 'delete_category' category.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Löschen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Icon-Auswahl
+    function selectIcon(icon) {
+        // Icon im Hidden Field speichern
+        document.getElementById('id_icon').value = icon;
+
+        // Visuelle Auswahl aktualisieren
+        document.querySelectorAll('.icon-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        document.querySelector(`.icon-item[data-icon="${icon}"]`).classList.add('selected');
+    }
+
+    // Formularvalidierung
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.needs-validation');
+
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            form.classList.add('was-validated');
+        });
+    });
+</script>
+{% endblock %}

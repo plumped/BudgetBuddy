@@ -1,3 +1,4 @@
+# BudgetBuddy/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -12,6 +13,10 @@ urlpatterns = [
     path('budgets/', include('budgets.urls')),
     path('expenses/', include('expenses.urls')),
     path('savings/', include('savings.urls')),
+
+    # Django auth views for password reset
+    path('password-reset/',
+         include('django.contrib.auth.urls')),
 ]
 
 # Für Medien während der Entwicklung hinzufügen

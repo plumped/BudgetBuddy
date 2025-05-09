@@ -1,0 +1,75 @@
+/* static/css/print.css */
+/* Druckstil für Berichte und Listen */
+
+@media print {
+    body {
+        background-color: #fff;
+        font-size: 12pt;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+
+    .navbar, .footer, .sidebar {
+        display: none;
+    }
+
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+
+    .page-break {
+        page-break-before: always;
+    }
+
+    /* Tabellen */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        border: 1px solid #ddd;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+    }
+
+    /* Diagramme */
+    .chart-container {
+        max-width: 500px;
+        margin: 0 auto;
+        break-inside: avoid;
+    }
+
+    /* Header und Fußzeile */
+    @page {
+        margin: 2cm;
+    }
+
+    .print-header {
+        display: block;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+    }
+
+    .print-footer {
+        display: block;
+        border-top: 1px solid #ddd;
+        margin-top: 20px;
+        padding-top: 10px;
+        font-size: 10pt;
+        text-align: center;
+    }
+}
