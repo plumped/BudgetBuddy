@@ -9,6 +9,7 @@ import datetime
 from django.db.models import Sum, Avg, Max, Count, F, Q
 from django.db.models.functions import TruncMonth, TruncDay
 
+from budgets.models import Budget, BudgetCategory, Category
 from .models import Expense
 from .forms import ExpenseForm
 
@@ -311,7 +312,71 @@ def expense_analysis(request):
 @login_required
 def expense_detail(request, expense_id):
     expense = get_object_or_404(Expense, id=expense_id, family=request.user.family)
-    return render(request, 'expenses/expense_detail.html', {'expense': expense})
+
+    # Get budget category for this expense in the current month
+    today = timezone.now().date()
+    current_month_start = today.replace(day=1)
+    next_month = (today.replace(day=1) + datetime.timedelta(days=32)).replace(day=1)
+
+    try:
+        current_budget = Budget.objects.get(
+            family=request.user.family,
+            month__gte=current_month_start,
+            month__lt=next_month
+        )
+
+        # Get the budget category for this expense's category
+        try:
+            budget_category = BudgetCategory.objects.get(
+                budget=current_budget,
+                category=expense.category
+            )
+
+            # Calculate category expenses and remaining budget
+            category_spent = Expense.objects.filter(
+                family=request.user.family,
+                category=expense.category,
+                date__gte=current_month_start,
+                date__lt=next_month
+            ).aggregate(total=Sum('amount'))['total'] or 0
+
+            category_remaining = budget_category.amount - category_spent
+
+            if budget_category.amount > 0:
+                category_percentage = (category_spent / budget_category.amount) * 100
+            else:
+                category_percentage = 0
+
+        except BudgetCategory.DoesNotExist:
+            budget_category = None
+            category_spent = 0
+            category_remaining = 0
+            category_percentage = 0
+
+    except Budget.DoesNotExist:
+        current_budget = None
+        budget_category = None
+        category_spent = 0
+        category_remaining = 0
+        category_percentage = 0
+
+    # Find similar expenses (same category, recent)
+    similar_expenses = Expense.objects.filter(
+        family=request.user.family,
+        category=expense.category
+    ).exclude(id=expense.id).order_by('-date')[:3]
+
+    context = {
+        'expense': expense,
+        'current_budget': current_budget,
+        'budget_category': budget_category,
+        'category_spent': category_spent,
+        'category_remaining': category_remaining,
+        'category_percentage': min(category_percentage, 100),  # Cap at 100%
+        'similar_expenses': similar_expenses,
+    }
+
+    return render(request, 'expenses/expense_detail.html', context)
 
 
 @login_required
