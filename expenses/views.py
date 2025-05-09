@@ -1,5 +1,6 @@
 # expenses/views.py
-from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
@@ -305,3 +306,70 @@ def expense_analysis(request):
     }
 
     return render(request, 'expenses/expense_analysis.html', context)
+
+
+@login_required
+def expense_detail(request, expense_id):
+    expense = get_object_or_404(Expense, id=expense_id, family=request.user.family)
+    return render(request, 'expenses/expense_detail.html', {'expense': expense})
+
+
+@login_required
+def edit_expense(request, expense_id):
+    expense = get_object_or_404(Expense, id=expense_id, family=request.user.family)
+
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST, request.FILES, instance=expense)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Ausgabe erfolgreich aktualisiert!')
+            return redirect('expense_list')
+    else:
+        form = ExpenseForm(instance=expense)
+
+    return render(request, 'expenses/edit_expense.html', {'form': form, 'expense': expense})
+
+
+@login_required
+def delete_expense(request, expense_id):
+    expense = get_object_or_404(Expense, id=expense_id, family=request.user.family)
+
+    if request.method == 'POST':
+        expense.delete()
+        messages.success(request, 'Ausgabe erfolgreich gelöscht!')
+        return redirect('expense_list')
+
+    return render(request, 'expenses/delete_expense.html', {'expense': expense})
+
+
+@login_required
+def expense_export(request):
+    # Get query parameters
+    export_format = request.GET.get('format', 'csv')
+    period = request.GET.get('period', 'month')
+
+    # Filter expenses based on period (similar to expense_analysis)
+    # ... implement filtering logic ...
+
+    if export_format == 'csv':
+        # Generate CSV response
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
+
+        # Create CSV writer and write data
+        # ... implement CSV export ...
+
+        return response
+
+    elif export_format == 'pdf':
+        # Generate PDF response
+        # ... implement PDF export ...
+        pass
+
+    elif export_format == 'excel':
+        # Generate Excel response
+        # ... implement Excel export ...
+        pass
+
+    # Default fallback
+    return redirect('expense_list')

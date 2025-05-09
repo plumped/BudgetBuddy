@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ausgabe löschen{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Ausgabe löschen</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'expense_list' %}">Ausgaben</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'expense_detail' expense.id %}">{{ expense.description }}</a></li>
+                    <li class="breadcrumb-item active">Löschen</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <div class="bg-danger-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                        <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
+                    </div>
+
+                    <h3>Ausgabe wirklich löschen?</h3>
+                    <p class="text-muted mb-4">
+                        Bist du sicher, dass du diese Ausgabe löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.
+                    </p>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <h6 class="text-muted mb-1">Beschreibung</h6>
+                                    <p class="mb-0 fw-bold">{{ expense.description }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-1">Betrag</h6>
+                                    <p class="mb-0 fw-bold">{{ expense.amount|floatformat:2 }} €</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <h6 class="text-muted mb-1">Kategorie</h6>
+                                    <p class="mb-0">
+                                        <i class="bi bi-{{ expense.category.icon }} me-1"></i> {{ expense.category.name }}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-1">Datum</h6>
+                                    <p class="mb-0">{{ expense.date|date:"d.m.Y" }}</p>
+                                </div>
+                            </div>
+
+                            {% if expense.receipt_image %}
+                            <hr>
+                            <div class="text-center">
+                                <h6 class="text-muted mb-2">Beleg</h6>
+                                <img src="{{ expense.receipt_image.url }}" alt="Beleg" class="img-fluid rounded" style="max-height: 150px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                            <a href="{% url 'expense_detail' expense.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i> Abbrechen
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i> Ausgabe löschen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ausgabendetails{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Ausgabendetails</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'expense_list' %}">Ausgaben</a></li>
+                    <li class="breadcrumb-item active">{{ expense.description }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="card-title h4">{{ expense.description }}</h2>
+                        <h2>{{ expense.amount|floatformat:2 }} €</h2>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Kategorie</label>
+                                <div class="d-flex align-items-center">
+                                    <div class="category-icon me-2" style="width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-{{ expense.category.icon }}"></i>
+                                    </div>
+                                    <span class="fs-5">{{ expense.category.name }}</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Datum</label>
+                                <p class="fs-5 mb-0">{{ expense.date|date:"d.m.Y" }}</p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Erfasst von</label>
+                                <p class="fs-5 mb-0">{{ expense.user.username }}</p>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Erfasst am</label>
+                                <p class="fs-5 mb-0">{{ expense.created_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if expense.receipt_image %}
+                    <div class="mb-4">
+                        <label class="form-label text-muted mb-2">Beleg</label>
+                        <div class="text-center">
+                            <img src="{{ expense.receipt_image.url }}" alt="Beleg" class="img-fluid rounded shadow-sm" style="max-height: 400px;">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Zurück zur Liste
+                        </a>
+                        <div>
+                            <a href="{% url 'edit_expense' expense.id %}" class="btn btn-primary me-2">
+                                <i class="bi bi-pencil me-1"></i> Bearbeiten
+                            </a>
+                            <a href="{% url 'delete_expense' expense.id %}" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i> Löschen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Budgetstatus</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if budget_category %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Budget für {{ expense.category.name }}</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>Ausgegeben</span>
+                            <span class="fw-bold">{{ category_spent|floatformat:2 }} €</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>Budget</span>
+                            <span class="fw-bold">{{ budget_category.amount|floatformat:2 }} €</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Verbleibend</span>
+                            <span class="fw-bold {% if category_remaining < 0 %}text-danger{% endif %}">
+                                {{ category_remaining|floatformat:2 }} €
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            {% if category_percentage > 100 %}
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
+                            {% elif category_percentage > 75 %}
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ category_percentage }}%"></div>
+                            {% else %}
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ category_percentage }}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted mb-3">Kein Budget für diese Kategorie im aktuellen Monat.</p>
+                        <a href="{% url 'create_budget' %}" class="btn btn-sm btn-primary">Budget erstellen</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Ähnliche Ausgaben</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for similar in similar_expenses %}
+                        <a href="{% url 'expense_detail' similar.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 py-3">
+                            <div>
+                                <div class="fw-bold">{{ similar.description }}</div>
+                                <small class="text-muted">{{ similar.date|date:"d.m.Y" }}</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ similar.amount|floatformat:2 }} €</span>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item border-0 text-center py-3">
+                            <p class="text-muted mb-0">Keine ähnlichen Ausgaben gefunden.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

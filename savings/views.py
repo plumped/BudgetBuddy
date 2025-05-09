@@ -69,3 +69,31 @@ def create_saving_goal(request):
         form = SavingGoalForm()
 
     return render(request, 'savings/create_goal.html', {'form': form})
+
+
+@login_required
+def edit_saving_goal(request, goal_id):
+    goal = get_object_or_404(SavingGoal, id=goal_id, family=request.user.family)
+
+    if request.method == 'POST':
+        form = SavingGoalForm(request.POST, request.FILES, instance=goal)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Sparziel erfolgreich aktualisiert!')
+            return redirect('saving_goals_list')
+    else:
+        form = SavingGoalForm(instance=goal)
+
+    return render(request, 'savings/edit_goal.html', {'form': form, 'goal': goal})
+
+
+@login_required
+def delete_saving_goal(request, goal_id):
+    goal = get_object_or_404(SavingGoal, id=goal_id, family=request.user.family)
+
+    if request.method == 'POST':
+        goal.delete()
+        messages.success(request, 'Sparziel erfolgreich gelöscht!')
+        return redirect('saving_goals_list')
+
+    return render(request, 'savings/delete_goal.html', {'goal': goal})

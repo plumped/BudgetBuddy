@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sparziel bearbeiten{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Sparziel bearbeiten</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'saving_goals_list' %}">Sparziele</a></li>
+                    <li class="breadcrumb-item active">{{ goal.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                {{ form.title|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.target_amount|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.target_date|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="id_image" class="form-label">Motivationsbild</label>
+                                <div class="input-group mb-3">
+                                    <input type="file" class="form-control" id="id_image" name="image" accept="image/*">
+                                    <label class="input-group-text" for="id_image"><i class="bi bi-image"></i></label>
+                                </div>
+                                <small class="form-text text-muted">Wähle ein Bild, das dich motiviert, dein Ziel zu erreichen (max. 5 MB)</small>
+
+                                {% if goal.image %}
+                                <div class="mt-3 mb-2">
+                                    <p class="form-text text-muted">Aktuelles Bild:</p>
+                                    <img src="{{ goal.image.url }}" alt="Aktuelles Motivationsbild" class="img-fluid rounded" style="max-height: 200px;">
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="delete_image" name="delete_image">
+                                    <label class="form-check-label" for="delete_image">
+                                        Bild entfernen
+                                    </label>
+                                </div>
+                                {% endif %}
+
+                                <div class="mt-3 text-center">
+                                    <img id="goal_image_preview" src="#" alt="Bildvorschau" style="max-width: 100%; max-height: 300px; display: none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'saving_goal_detail' goal.id %}" class="btn btn-outline-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Änderungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Aktueller Fortschritt</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            <svg width="160" height="160" viewBox="0 0 160 160">
+                                <circle cx="80" cy="80" r="70" fill="none" stroke="#e9ecef" stroke-width="12"/>
+                                <circle cx="80" cy="80" r="70" fill="none" stroke="#0d6efd" stroke-width="12"
+                                       stroke-dasharray="439.6" stroke-dashoffset="{{ progress_offset }}"
+                                       transform="rotate(-90 80 80)"/>
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <h2 class="mb-0">{{ goal.progress_percentage }}%</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Aktueller Betrag:</span>
+                        <span class="fw-bold">{{ goal.current_amount|floatformat:2 }} €</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Benötigt noch:</span>
+                        <span class="fw-bold">{{ remaining_amount|floatformat:2 }} €</span>
+                    </div>
+
+                    {% if goal.target_date %}
+                    <div class="alert alert-info" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">Zeitplan</h6>
+                                <p class="mb-0 small">
+                                    {% if days_remaining > 0 %}
+                                    Noch {{ days_remaining }} Tage bis zum Zieldatum. Du musst durchschnittlich {{ daily_amount|floatformat:2 }} € pro Tag sparen.
+                                    {% else %}
+                                    Das Zieldatum ist bereits überschritten.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Weitere Aktionen</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'saving_goal_detail' goal.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye me-1"></i> Details anzeigen
+                        </a>
+                        <a href="{% url 'delete_saving_goal' goal.id %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-1"></i> Sparziel löschen
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Bildvorschau
+    document.addEventListener('DOMContentLoaded', function() {
+        const imageInput = document.getElementById('id_image');
+        const imagePreview = document.getElementById('goal_image_preview');
+        const deleteCheckbox = document.getElementById('delete_image');
+
+        if (imageInput && imagePreview) {
+            imageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+
+                        // Wenn ein neues Bild ausgewählt wurde, Löschen-Checkbox zurücksetzen
+                        if (deleteCheckbox) {
+                            deleteCheckbox.checked = false;
+                        }
+                    };
+
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        if (deleteCheckbox && imageInput) {
+            deleteCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    // Wenn Löschen ausgewählt ist, Dateiauswahl zurücksetzen
+                    imageInput.value = '';
+                    imagePreview.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

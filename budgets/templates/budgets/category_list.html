@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kategorien verwalten{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-0">Kategorien verwalten</h1>
+            <p class="text-muted">Erstelle und bearbeite Ausgabenkategorien</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'create_category' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Neue Kategorie
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Verfügbare Kategorien</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if categories %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Icon</th>
+                                    <th>Name</th>
+                                    <th>Anzahl Ausgaben</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in categories %}
+                                <tr>
+                                    <td>
+                                        <div class="category-icon" style="width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-{{ category.icon }}"></i>
+                                        </div>
+                                    </td>
+                                    <td>{{ category.name }}</td>
+                                    <td>{{ category.expense_count }}</td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ category.id }}">Bearbeiten</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteCategoryModal{{ category.id }}">
+                                                        Löschen
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <!-- Edit Modal -->
+                                        <div class="modal fade" id="editCategoryModal{{ category.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Kategorie bearbeiten</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                                                    </div>
+                                                    <form method="post" action="{% url 'edit_category' category.id %}">
+                                                        {% csrf_token %}
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label for="category_name_{{ category.id }}" class="form-label">Name</label>
+                                                                <input type="text" class="form-control" id="category_name_{{ category.id }}" name="name" value="{{ category.name }}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="category_icon_{{ category.id }}" class="form-label">Icon</label>
+                                                                <select class="form-select" id="category_icon_{{ category.id }}" name="icon">
+                                                                    {% for icon in icons %}
+                                                                    <option value="{{ icon }}" {% if category.icon == icon %}selected{% endif %}>
+                                                                        <i class="bi bi-{{ icon }}"></i> {{ icon }}
+                                                                    </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                                            <button type="submit" class="btn btn-primary">Speichern</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteCategoryModal{{ category.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Kategorie löschen</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Möchtest du die Kategorie "{{ category.name }}" wirklich löschen?</p>
+                                                        {% if category.expense_count > 0 %}
+                                                        <div class="alert alert-warning">
+                                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                                            Diese Kategorie wird bei {{ category.expense_count }} Ausgaben verwendet. Beim Löschen werden diese Ausgaben keiner Kategorie mehr zugeordnet.
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                                        <form method="post" action="{% url 'delete_category' category.id %}">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-danger">Löschen</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 120px; height: 120px;">
+                            <i class="bi bi-tags text-muted fs-1"></i>
+                        </div>
+                        <h3>Noch keine Kategorien</h3>
+                        <p class="text-muted mb-4">Erstelle deine erste Kategorie, um Ausgaben besser zu organisieren.</p>
+                        <a href="{% url 'create_category' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Kategorie erstellen
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Informationen</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-info-circle text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Was sind Kategorien?</h6>
+                            <p class="mb-0 text-muted small">Kategorien helfen dir, deine Ausgaben zu organisieren und zu analysieren. Jede Ausgabe sollte einer Kategorie zugeordnet werden.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-bar-chart text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Analyse verbessern</h6>
+                            <p class="mb-0 text-muted small">Mit präzisen Kategorien erhältst du genauere Analysen und Einblicke in dein Ausgabeverhalten.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-gear text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Anpassbare Icons</h6>
+                            <p class="mb-0 text-muted small">Wähle passende Icons für deine Kategorien, um sie leichter zu erkennen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Empfohlene Kategorien</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action border-0" onclick="quickAddCategory('Lebensmittel', 'cart'); return false;">
+                            <div class="d-flex align-items-center">
+                                <div class="category-icon me-3" style="width: 35px; height: 35px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-cart"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Lebensmittel</div>
+                                    <small class="text-muted">Supermarkt, Lebensmitteleinkäufe</small>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action border-0" onclick="quickAddCategory('Wohnen', 'house'); return false;">
+                            <div class="d-flex align-items-center">
+                                <div class="category-icon me-3" style="width: 35px; height: 35px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-house"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Wohnen</div>
+                                    <small class="text-muted">Miete, Nebenkosten, Einrichtung</small>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action border-0" onclick="quickAddCategory('Transport', 'car-front'); return false;">
+                            <div class="d-flex align-items-center">
+                                <div class="category-icon me-3" style="width: 35px; height: 35px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-car-front"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Transport</div>
+                                    <small class="text-muted">Auto, ÖPNV, Transportkosten</small>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action border-0" onclick="quickAddCategory('Freizeit', 'controller'); return false;">
+                            <div class="d-flex align-items-center">
+                                <div class="category-icon me-3" style="width: 35px; height: 35px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-controller"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Freizeit</div>
+                                    <small class="text-muted">Unterhaltung, Hobbys, Ausflüge</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Category Form (hidden) -->
+<form id="quickAddForm" method="post" action="{% url 'create_category' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" id="quick_name" name="name">
+    <input type="hidden" id="quick_icon" name="icon">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Schnelles Hinzufügen von vorgeschlagenen Kategorien
+    function quickAddCategory(name, icon) {
+        const nameInput = document.getElementById('quick_name');
+        const iconInput = document.getElementById('quick_icon');
+        const quickForm = document.getElementById('quickAddForm');
+
+        nameInput.value = name;
+        iconInput.value = icon;
+        quickForm.submit();
+    }
+</script>
+{% endblock %}

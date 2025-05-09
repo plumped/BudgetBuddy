@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Budget-Details{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Budget-Details</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'budget_list' %}">Budgets</a></li>
+                    <li class="breadcrumb-item active">{{ budget.month|date:"F Y" }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'edit_budget' budget.id %}" class="btn btn-primary">
+                <i class="bi bi-pencil me-1"></i> Bearbeiten
+            </a>
+        </div>
+    </div>
+
+    <!-- Budget-Übersichtskarten -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 theme-card theme-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Gesamtbudget</h6>
+                            <h2 class="display-5 mb-0">{{ budget.total_amount|floatformat:0 }} €</h2>
+                        </div>
+                        <div class="fs-1 text-primary">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 theme-card theme-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Ausgegeben</h6>
+                            <h2 class="display-5 mb-0">{{ total_spent|floatformat:0 }} €</h2>
+                        </div>
+                        <div class="fs-1 text-success">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 theme-card theme-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Verfügbar</h6>
+                            <h2 class="display-5 mb-0">{{ budget_remaining|floatformat:0 }} €</h2>
+                        </div>
+                        <div class="fs-1 text-warning">
+                            <i class="bi bi-piggy-bank"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Budget nach Kategorien -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Budget nach Kategorien</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Kategorie</th>
+                                    <th>Budget</th>
+                                    <th>Ausgegeben</th>
+                                    <th>Verbleibend</th>
+                                    <th>Fortschritt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in budget_categories %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="category-icon me-2" style="width: 35px; height: 35px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-{{ category.icon }}"></i>
+                                            </div>
+                                            <span>{{ category.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ category.budget|floatformat:2 }} €</td>
+                                    <td>{{ category.spent|floatformat:2 }} €</td>
+                                    <td class="{% if category.remaining < 0 %}text-danger fw-bold{% endif %}">
+                                        {{ category.remaining|floatformat:2 }} €
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 8px;">
+                                            {% if category.percentage > 100 %}
+                                                <div class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
+                                            {% elif category.percentage > 75 %}
+                                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ category.percentage }}%"></div>
+                                            {% else %}
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ category.percentage }}%"></div>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">{{ category.percentage|floatformat:0 }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ausgabenverteilung Diagramm -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Ausgabenverteilung</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="expenseChart" height="250" data-chart='{{ chart_data|safe }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Letzte Ausgaben im Budgetzeitraum -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Letzte Ausgaben ({{ budget.month|date:"F Y" }})</h5>
+                    <a href="{% url 'expense_list' %}?period=month" class="btn btn-sm btn-outline-primary">Alle anzeigen</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_expenses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Kategorie</th>
+                                    <th>Beschreibung</th>
+                                    <th class="text-end">Betrag</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in recent_expenses %}
+                                <tr>
+                                    <td>{{ expense.date|date:"d.m.Y" }}</td>
+                                    <td>
+                                        <i class="bi bi-{{ expense.category.icon }} me-1"></i> {{ expense.category.name }}
+                                    </td>
+                                    <td>{{ expense.description }}</td>
+                                    <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} €</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-0">Keine Ausgaben im ausgewählten Monat.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ausgabenverteilung Diagramm
+        const chartCanvas = document.getElementById('expenseChart');
+        if (chartCanvas) {
+            const chartData = JSON.parse(chartCanvas.getAttribute('data-chart'));
+            const expenseChart = new Chart(chartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        data: chartData.values,
+                        backgroundColor: [
+                            'rgba(13, 110, 253, 0.7)',  // Primary
+                            'rgba(25, 135, 84, 0.7)',   // Success
+                            'rgba(220, 53, 69, 0.7)',   // Danger
+                            'rgba(255, 193, 7, 0.7)',   // Warning
+                            'rgba(13, 202, 240, 0.7)',  // Info
+                            'rgba(111, 66, 193, 0.7)',  // Purple
+                            'rgba(214, 51, 132, 0.7)',  // Pink
+                            'rgba(108, 117, 125, 0.7)'  // Secondary
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.formattedValue;
+                                    const percentage = Math.round(context.raw / chartData.total * 100) + '%';
+                                    return `${label}: ${value} (${percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });

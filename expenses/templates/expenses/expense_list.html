@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Deine Ausgaben{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-item {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .filter-item:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
+    }
+    .filter-item.active {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        border-left: 3px solid var(--bs-primary);
+    }
+    .receipt-thumbnail {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-0">Deine Ausgaben</h1>
+            <p class="text-muted">Verwalte und analysiere deine Ausgaben</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'add_expense' %}" class="btn btn-primary me-2">
+                <i class="bi bi-plus-lg me-1"></i> Ausgabe hinzufügen
+            </a>
+            <a href="{% url 'expense_analysis' %}" class="btn btn-outline-primary">
+                <i class="bi bi-graph-up me-1"></i> Analyse
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Filter-Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Filter</h5>
+                </div>
+                <div class="card-body">
+                    <form id="filterForm" method="get">
+                        <!-- Zeitraumfilter -->
+                        <div class="mb-3">
+                            <label class="form-label">Zeitraum</label>
+                            <select name="period" id="periodFilter" class="form-select">
+                                <option value="all" {% if period == 'all' %}selected{% endif %}>Alle Ausgaben</option>
+                                <option value="month" {% if period == 'month' %}selected{% endif %}>Dieser Monat</option>
+                                <option value="last_month" {% if period == 'last_month' %}selected{% endif %}>Letzter Monat</option>
+                                <option value="3months" {% if period == '3months' %}selected{% endif %}>Letzte 3 Monate</option>
+                                <option value="year" {% if period == 'year' %}selected{% endif %}>Dieses Jahr</option>
+                            </select>
+                        </div>
+
+                        <!-- Kategoriefilter -->
+                        <div class="mb-3">
+                            <label class="form-label">Kategorie</label>
+                            <div class="list-group list-group-flush border-0">
+                                <label class="list-group-item filter-item border-0 d-flex align-items-center px-0 py-2 {% if not category %}active{% endif %}">
+                                    <input type="radio" name="category" value="" class="form-check-input me-2" {% if not category %}checked{% endif %}>
+                                    Alle Kategorien
+                                </label>
+                                {% for cat in categories %}
+                                <label class="list-group-item filter-item border-0 d-flex align-items-center px-0 py-2 {% if category == cat.id|stringformat:'i' %}active{% endif %}">
+                                    <input type="radio" name="category" value="{{ cat.id }}" class="form-check-input me-2" {% if category == cat.id|stringformat:'i' %}checked{% endif %}>
+                                    <i class="bi bi-{{ cat.icon }} me-2"></i> {{ cat.name }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Sortieroptionen -->
+                        <div class="mb-3">
+                            <label class="form-label">Sortieren nach</label>
+                            <select name="sort" id="sortFilter" class="form-select">
+                                <option value="date_desc" {% if sort == 'date_desc' %}selected{% endif %}>Datum (neueste zuerst)</option>
+                                <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>Datum (älteste zuerst)</option>
+                                <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>Betrag (höchster zuerst)</option>
+                                <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>Betrag (niedrigster zuerst)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel me-1"></i> Anwenden
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ausgabenliste -->
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Ausgabenübersicht</h5>
+                        {% if total_amount %}
+                        <p class="text-muted mb-0 small">Gesamt: {{ total_amount|floatformat:2 }} €</p>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Suchen..." id="searchInput">
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if expenses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Kategorie</th>
+                                    <th>Beschreibung</th>
+                                    <th>Beleg</th>
+                                    <th class="text-end">Betrag</th>
+                                    <th class="text-end">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr class="expense-row">
+                                    <td>{{ expense.date|date:"d.m.Y" }}</td>
+                                    <td>
+                                        {% if expense.category %}
+                                        <span class="d-flex align-items-center">
+                                            <i class="bi bi-{{ expense.category.icon }} me-2"></i>
+                                            {{ expense.category.name }}
+                                        </span>
+                                        {% else %}
+                                        <span class="d-flex align-items-center">
+                                            <i class="bi bi-question-circle me-2"></i>
+                                            Sonstige
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ expense.description }}</td>
+                                    <td>
+                                        {% if expense.receipt_image %}
+                                        <img src="{{ expense.receipt_image.url }}" alt="Beleg" class="receipt-thumbnail"
+                                            data-bs-toggle="modal" data-bs-target="#receiptModal"
+                                            data-bs-receipt="{{ expense.receipt_image.url }}"
+                                            data-bs-description="{{ expense.description }}">
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} €</td>
+                                    <td class="text-end">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="{% url 'expense_detail' expense.id %}">Details</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'edit_expense' expense.id %}">Bearbeiten</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="{% url 'delete_expense' expense.id %}">
+                                                        Löschen
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div style="width: 120px; height: 120px;" class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4">
+                            <i class="bi bi-receipt text-muted fs-1"></i>
+                        </div>
+                        <h3>Noch keine Ausgaben</h3>
+                        <p class="text-muted mb-4">Füge deine erste Ausgabe hinzu, um deine Finanzen zu verfolgen.</p>
+                        <a href="{% url 'add_expense' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Ausgabe hinzufügen
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if expenses.has_other_pages %}
+                <div class="card-footer bg-white">
+                    <nav aria-label="Seitennavigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if expenses.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ expenses.previous_page_number }}&period={{ period }}&category={{ category }}&sort={{ sort }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                            </li>
+                            {% endif %}
+
+                            {% for i in expenses.paginator.page_range %}
+                                {% if expenses.number == i %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                                {% elif i > expenses.number|add:'-3' and i < expenses.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}&period={{ period }}&category={{ category }}&sort={{ sort }}">{{ i }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if expenses.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ expenses.next_page_number }}&period={{ period }}&category={{ category }}&sort={{ sort }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Beleg-Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="receiptModalTitle">Beleg anzeigen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="receiptImage" src="" alt="Beleg" class="img-fluid">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Beleg-Modal
+        const receiptModal = document.getElementById('receiptModal');
+        if (receiptModal) {
+            receiptModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const receiptUrl = button.getAttribute('data-bs-receipt');
+                const description = button.getAttribute('data-bs-description');
+
+                // Modal-Elemente aktualisieren
+                const modalTitle = this.querySelector('#receiptModalTitle');
+                const modalImage = this.querySelector('#receiptImage');
+
+                modalTitle.textContent = 'Beleg: ' + description;
+                modalImage.src = receiptUrl;
+            });
+        }
+
+        // Filter-Formular Events
+        const periodFilter = document.getElementById('periodFilter');
+        const sortFilter = document.getElementById('sortFilter');
+        const filterForm = document.getElementById('filterForm');
+
+        // Automatische Formularabsendung bei Änderung der Auswahlfelder
+        if (periodFilter) {
+            periodFilter.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+
+        if (sortFilter) {
+            sortFilter.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+
+        // Kategoriefilter
+        const categoryRadios = document.querySelectorAll('input[name="category"]');
+        categoryRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        });
+
+        // Suchfunktion
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll('.expense-row');
+
+                rows.forEach(row => {
+                    const description = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    const category = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+
+                    if (description.includes(searchTerm) || category.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

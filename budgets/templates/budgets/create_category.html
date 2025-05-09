@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Neue Kategorie{% endblock %}
+
+{% block extra_css %}
+<style>
+    .icon-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 10px;
+    }
+    .icon-item {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s;
+    }
+    .icon-item:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        border-color: var(--bs-primary);
+    }
+    .icon-item.selected {
+        background-color: rgba(var(--bs-primary-rgb), 0.2);
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+    }
+    .icon-item i {
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Neue Kategorie erstellen</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'budget_list' %}">Budgets</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'category_list' %}">Kategorien</a></li>
+                    <li class="breadcrumb-item active">Neue Kategorie</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="id_name" class="form-label">Kategoriename <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="id_name" name="name" placeholder="z.B. Lebensmittel, Transport, Freizeit" required>
+                                <div class="invalid-feedback">
+                                    Bitte gib einen Namen für die Kategorie ein.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label class="form-label">Wähle ein Icon</label>
+                                <input type="hidden" name="icon" id="id_icon" value="{{ icons.0 }}">
+
+                                <div class="icon-selector">
+                                    {% for icon in icons %}
+                                    <div class="icon-item {% if forloop.first %}selected{% endif %}" data-icon="{{ icon }}" onclick="selectIcon('{{ icon }}')">
+                                        <i class="bi bi-{{ icon }}"></i>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'category_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Kategorie erstellen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Kategorien-Tipps</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-lightbulb text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Eindeutige Namen wählen</h6>
+                            <p class="mb-0 text-muted small">Verwende klare, eindeutige Namen für deine Kategorien, damit du deine Ausgaben einfach zuordnen kannst.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-diagram-3 text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Nicht zu spezifisch</h6>
+                            <p class="mb-0 text-muted small">Verwende nicht zu viele Kategorien. Zu viele spezifische Kategorien können die Übersicht erschweren.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-palette text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Passende Icons</h6>
+                            <p class="mb-0 text-muted small">Wähle Icons, die deine Kategorien visuell gut repräsentieren. Das erleichtert die Erkennung.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Beliebte Kategorien</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item border-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3" style="width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-cart text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Lebensmittel</h6>
+                                    <small class="text-muted">Supermarkt, Einkäufe, Verpflegung</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="list-group-item border-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3" style="width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-house text-success"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Wohnen</h6>
+                                    <small class="text-muted">Miete, Nebenkosten, Möbel</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="list-group-item border-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3" style="width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-car-front text-danger"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Transport</h6>
+                                    <small class="text-muted">Auto, ÖPNV, Fahrrad, Benzin</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="list-group-item border-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3" style="width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-cup-hot text-warning"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Restaurant & Café</h6>
+                                    <small class="text-muted">Essen gehen, Kaffee, Getränke</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Icon-Auswahl
+    function selectIcon(icon) {
+        // Icon im Hidden Field speichern
+        document.getElementById('id_icon').value = icon;
+
+        // Visuelle Auswahl aktualisieren
+        document.querySelectorAll('.icon-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        document.querySelector(`.icon-item[data-icon="${icon}"]`).classList.add('selected');
+    }
+
+    // Formularvalidierung
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.needs-validation');
+
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            form.classList.add('was-validated');
+        });
+    });
+</script>
+{% endblock %}

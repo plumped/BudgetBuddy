@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Budget erstellen{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Neues Budget erstellen</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'budget_list' %}">Budgets</a></li>
+                    <li class="breadcrumb-item active">Neues Budget</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="mb-3">Budget-Informationen</h5>
+                                {{ form|crispy }}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Kategorien</h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="add_category_btn">
+                                    <i class="bi bi-plus-lg me-1"></i> Kategorie hinzufügen
+                                </button>
+                            </div>
+
+                            <div id="category_formset">
+                                {{ formset.management_form }}
+
+                                {% for form in formset %}
+                                <div class="card mb-3 category-form">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.category|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.amount|as_crispy_field }}
+                                            </div>
+                                        </div>
+
+                                        {% if formset.can_delete %}
+                                        <div class="form-check">
+                                            {{ form.DELETE|as_crispy_field }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'budget_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-wallet2 me-1"></i> Budget erstellen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Tipps für dein Budget</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-calculator text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Realistische Budgets</h6>
+                            <p class="mb-0 text-muted small">Setze realistische Budgets für jede Kategorie, basierend auf vergangenen Ausgaben.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-pie-chart text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>50-30-20 Regel</h6>
+                            <p class="mb-0 text-muted small">50% für Bedürfnisse, 30% für Wünsche und 20% für Sparen und Schuldenabbau.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-graph-up-arrow text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Regelmäßige Überprüfung</h6>
+                            <p class="mb-0 text-muted small">Überprüfe dein Budget regelmäßig und passe es an veränderte Umstände an.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Ausgabenkategorien</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for category in categories %}
+                        <div class="list-group-item d-flex align-items-center border-0 py-3">
+                            <div class="category-icon me-3" style="width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-{{ category.icon }}"></i>
+                            </div>
+                            <span>{{ category.name }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item border-0 py-3 text-center">
+                            <p class="mb-2 text-muted">Noch keine Kategorien vorhanden.</p>
+                            <a href="{% url 'create_category' %}" class="btn btn-sm btn-primary">
+                                Kategorie erstellen
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kategorie-Formset dynamisch hinzufügen
+        const addCategoryBtn = document.getElementById('add_category_btn');
+        const categoryContainer = document.getElementById('category_formset');
+
+        if (addCategoryBtn && categoryContainer) {
+            addCategoryBtn.addEventListener('click', function() {
+                const forms = categoryContainer.getElementsByClassName('category-form');
+                const formNum = forms.length;
+                const totalForms = document.getElementById('id_budgetcategory_set-TOTAL_FORMS');
+
+                // Klone das letzte Formular
+                const newForm = forms[forms.length - 1].cloneNode(true);
+
+                // Aktualisiere IDs und Namen
+                let formRegex = RegExp(`budgetcategory_set-(\\d){1}-`,'g');
+                newForm.innerHTML = newForm.innerHTML.replace(formRegex, `budgetcategory_set-${formNum}-`);
+
+                // Setze Werte zurück
+                const inputs = newForm.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.type === 'text' || input.type === 'number') {
+                        input.value = '';
+                    }
+                });
+
+                // Füge das neue Formular hinzu
+                categoryContainer.appendChild(newForm);
+
+                // Aktualisiere den Zähler
+                totalForms.value = formNum + 1;
+            });
+        }
+    });
+</script>
+{% endblock %}

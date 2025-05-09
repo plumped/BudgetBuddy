@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ goal.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .goal-header {
+        position: relative;
+        height: 250px;
+        background-size: cover;
+        background-position: center;
+        border-radius: 10px;
+    }
+    .goal-header-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.7));
+        border-radius: 10px;
+    }
+    .goal-header-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 30px;
+        color: white;
+    }
+    .transaction-icon-deposit {
+        width: 40px;
+        height: 40px;
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .transaction-icon-withdrawal {
+        width: 40px;
+        height: 40px;
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Sparziel Header mit Hintergrundbild -->
+    <div class="goal-header mb-4" {% if goal.image %}style="background-image: url('{{ goal.image.url }}');"{% else %}style="background-color: #f8f9fa;"{% endif %}>
+        <div class="goal-header-overlay"></div>
+        <div class="goal-header-content">
+            <div class="d-flex justify-content-between align-items-end">
+                <div>
+                    <h1 class="mb-0">{{ goal.title }}</h1>
+                    <p class="mb-0">{{ goal.target_amount|floatformat:2 }} € Sparziel</p>
+                </div>
+                <div>
+                    <a href="{% url 'edit_saving_goal' goal.id %}" class="btn btn-light me-2">
+                        <i class="bi bi-pencil me-1"></i> Bearbeiten
+                    </a>
+                    <a href="{% url 'delete_saving_goal' goal.id %}" class="btn btn-outline-light">
+                        <i class="bi bi-trash me-1"></i> Löschen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Linke Spalte - Zielbeschreibung und Fortschritt -->
+        <div class="col-lg-8 mb-4">
+            <div class="row">
+                <!-- Fortschrittsübersicht -->
+                <div class="col-12 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h3 class="card-title h5 mb-4">Fortschritt</h3>
+
+                            <div class="row align-items-center">
+                                <div class="col-md-4 text-center mb-4 mb-md-0">
+                                    <div class="position-relative d-inline-block">
+                                        <svg width="160" height="160" viewBox="0 0 160 160">
+                                            <circle cx="80" cy="80" r="70" fill="none" stroke="#e9ecef" stroke-width="12"/>
+                                            <circle cx="80" cy="80" r="70" fill="none" stroke="#0d6efd" stroke-width="12"
+                                                   stroke-dasharray="439.6" stroke-dashoffset="{{ progress_offset }}"
+                                                   class="progress-ring"/>
+                                        </svg>
+                                        <div class="position-absolute top-50 start-50 translate-middle">
+                                            <h2 class="mb-0">{{ goal.progress_percentage }}%</h2>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-8">
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <div class="card border-0 bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="text-muted mb-1">Aktueller Betrag</h6>
+                                                    <h3>{{ goal.current_amount|floatformat:2 }} €</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="card border-0 bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="text-muted mb-1">Noch benötigt</h6>
+                                                    <h3>{{ remaining_amount|floatformat:2 }} €</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if goal.target_date %}
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="text-muted mb-1">Zieldatum</h6>
+                                                    <h5>{{ goal.target_date|date:"d.m.Y" }}</h5>
+                                                </div>
+                                                <div class="text-end">
+                                                    <h6 class="text-muted mb-1">Verbleibend</h6>
+                                                    <h5 {% if days_remaining < 7 %}class="text-danger"{% endif %}>
+                                                        {% if days_remaining > 0 %}
+                                                            {{ days_remaining }} Tage
+                                                        {% else %}
+                                                            Abgelaufen
+                                                        {% endif %}
+                                                    </h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beschreibung & Details -->
+                <div class="col-12 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Über dieses Sparziel</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ goal.description|linebreaks }}</p>
+
+                            {% if goal.target_date and days_remaining > 0 %}
+                            <div class="alert alert-info" role="alert">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="bi bi-info-circle-fill fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="alert-heading">Sparplan</h5>
+                                        <p>Um dein Ziel zu erreichen, solltest du etwa <strong>{{ daily_amount|floatformat:2 }} € pro Tag</strong> oder <strong>{{ monthly_amount|floatformat:2 }} € pro Monat</strong> zurücklegen.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span><i class="bi bi-calendar3 me-1"></i> Erstellt am {{ goal.created_at|date:"d.m.Y" }}</span>
+                                <span><i class="bi bi-person me-1"></i> Erstellt von {{ goal.creator.username }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rechte Spalte - Transaktionen -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Transaktion hinzufügen</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                {{ form.amount|as_crispy_field }}
+                            </div>
+                            <div class="col-12 mb-3">
+                                {{ form.transaction_type|as_crispy_field }}
+                            </div>
+                            <div class="col-12 mb-3">
+                                {{ form.date|as_crispy_field }}
+                            </div>
+                            <div class="col-12 mb-3">
+                                {{ form.note|as_crispy_field }}
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-plus-circle me-1"></i> Transaktion speichern
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Transaktionsverlauf</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for transaction in transactions %}
+                        <div class="list-group-item border-0 py-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3">
+                                    {% if transaction.transaction_type == 'DEPOSIT' %}
+                                    <div class="transaction-icon-deposit">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </div>
+                                    {% else %}
+                                    <div class="transaction-icon-withdrawal">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0">
+                                            {% if transaction.transaction_type == 'DEPOSIT' %}
+                                            Einzahlung
+                                            {% else %}
+                                            Auszahlung
+                                            {% endif %}
+                                        </h6>
+                                        <span class="fw-bold {% if transaction.transaction_type == 'DEPOSIT' %}text-success{% else %}text-danger{% endif %}">
+                                            {% if transaction.transaction_type == 'DEPOSIT' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:2 }} €
+                                        </span>
+                                    </div>
+                                    {% if transaction.note %}
+                                    <p class="mb-1 small">{{ transaction.note }}</p>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                                        <span>{{ transaction.date|date:"d.m.Y" }}</span>
+                                        <span>{{ transaction.user.username }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item border-0 py-4 text-center">
+                            <i class="bi bi-cash-stack text-muted fs-2"></i>
+                            <p class="mb-0 mt-2">Noch keine Transaktionen</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
