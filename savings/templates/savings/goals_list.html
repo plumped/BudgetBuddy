@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Deine Sparziele{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-0">Deine Sparziele</h1>
+            <p class="text-muted">Verfolge deine finanziellen Ziele und spar gezielt</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'create_saving_goal' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Neues Sparziel
+            </a>
+        </div>
+    </div>
+
+    <!-- Übersicht / Statistiken -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 theme-card theme-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Aktive Sparziele</h6>
+                            <h2 class="display-5 mb-0">{{ goals.count }}</h2>
+                        </div>
+                        <div class="fs-1 text-success">
+                            <i class="bi bi-piggy-bank"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 theme-card theme-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Gesamt gespart</h6>
+                            <h2 class="display-5 mb-0">{{ total_saved|floatformat:0 }} €</h2>
+                        </div>
+                        <div class="fs-1 text-info">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 theme-card theme-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Nächstes Ziel in</h6>
+                            {% if next_target_days is not None %}
+                                <h2 class="display-5 mb-0">{{ next_target_days }} Tagen</h2>
+                            {% else %}
+                                <h2 class="display-5 mb-0">-</h2>
+                            {% endif %}
+                        </div>
+                        <div class="fs-1 text-warning">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs für verschiedene Ansichten -->
+    <ul class="nav nav-tabs mb-4" id="goalsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="cards-tab" data-bs-toggle="tab" data-bs-target="#cards-view" type="button" role="tab">
+                <i class="bi bi-grid me-1"></i> Karten
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list-view" type="button" role="tab">
+                <i class="bi bi-list-ul me-1"></i> Liste
+            </button>
+        </li>
+        <li class="nav-item ms-auto">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control border-start-0" id="goalSearch" placeholder="Suchen...">
+            </div>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="goalsTabContent">
+        <!-- Kartenansicht -->
+        <div class="tab-pane fade show active" id="cards-view" role="tabpanel">
+            {% if goals %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for goal in goals %}
+                <div class="col goal-item">
+                    <div class="card h-100 border-0 shadow-sm goal-card">
+                        {% if goal.image %}
+                        <div class="goal-card-image" style="background-image: url('{{ goal.image.url }}');"></div>
+                        {% else %}
+                        <div class="goal-card-image bg-light d-flex align-items-center justify-content-center">
+                            <i class="bi bi-piggy-bank text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        {% endif %}
+
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title mb-0">{{ goal.title }}</h5>
+                                <span class="badge bg-{{ goal.progress_percentage|floatformat:0|divisibleby:100|yesno:"success,primary" }} rounded-pill">
+                                    {{ goal.progress_percentage|floatformat:0 }}%
+                                </span>
+                            </div>
+
+                            <p class="card-text text-muted small mb-3">{{ goal.description|truncatechars:100 }}</p>
+
+                            <div class="d-flex justify-content-between text-muted small mb-2">
+                                <span>Gespart: {{ goal.current_amount|floatformat:0 }} €</span>
+                                <span>Ziel: {{ goal.target_amount|floatformat:0 }} €</span>
+                            </div>
+
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-primary animate-progress" role="progressbar"
+                                     style="width: 0%;"
+                                     data-progress="{{ goal.progress_percentage|floatformat:0 }}"></div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                {% if goal.target_date %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i> Bis {{ goal.target_date|date:"d.m.Y" }}
+                                    </small>
+                                {% else %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-infinity me-1"></i> Kein Zieldatum
+                                    </small>
+                                {% endif %}
+
+                                <a href="{% url 'saving_goal_detail' goal.id %}" class="btn btn-sm btn-primary">
+                                    Details
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Fortschrittsbalken am unteren Rand der Karte -->
+                        <div class="progress" style="height: 4px; border-radius: 0;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: {{ goal.progress_percentage|floatformat:0 }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div style="width: 120px; height: 120px;" class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4">
+                    <i class="bi bi-piggy-bank text-muted fs-1"></i>
+                </div>
+                <h3>Noch keine Sparziele</h3>
+                <p class="text-muted mb-4">Erstelle dein erstes Sparziel und verfolge deinen Fortschritt.</p>
+                <a href="{% url 'create_saving_goal' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Jetzt Sparziel erstellen
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Listenansicht -->
+        <div class="tab-pane fade" id="list-view" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    {% if goals %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Sparziel</th>
+                                    <th scope="col">Fortschritt</th>
+                                    <th scope="col">Gespart</th>
+                                    <th scope="col">Ziel</th>
+                                    <th scope="col">Zieldatum</th>
+                                    <th scope="col">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for goal in goals %}
+                                <tr class="goal-item">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if goal.image %}
+                                                <div class="flex-shrink-0 me-2" style="width: 40px; height: 40px;">
+                                                    <img src="{{ goal.image.url }}" alt="{{ goal.title }}" class="img-fluid rounded" style="width: 40px; height: 40px; object-fit: cover;">
+                                                </div>
+                                            {% else %}
+                                                <div class="flex-shrink-0 bg-light rounded d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-piggy-bank text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <a href="{% url 'saving_goal_detail' goal.id %}" class="text-decoration-none text-dark">
+                                                    {{ goal.title }}
+                                                </a>
+                                                <div class="text-muted small">{{ goal.description|truncatechars:50 }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ goal.progress_percentage|floatformat:0 }}%;"></div>
+                                            </div>
+                                            <span class="badge bg-{{ goal.progress_percentage|floatformat:0|divisibleby:100|yesno:"success,primary" }} rounded-pill">
+                                                {{ goal.progress_percentage|floatformat:0 }}%
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>{{ goal.current_amount|floatformat:0 }} €</td>
+                                    <td>{{ goal.target_amount|floatformat:0 }} €</td>
+                                    <td>
+                                        {% if goal.target_date %}
+                                            {{ goal.target_date|date:"d.m.Y" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="{% url 'saving_goal_detail' goal.id %}">Details</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'edit_saving_goal' goal.id %}">Bearbeiten</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteGoalModal{{ goal.id }}">
+                                                        Löschen
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <!-- Lösch-Modal -->
+                                        <div class="modal fade" id="deleteGoalModal{{ goal.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Sparziel löschen</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Bist du sicher, dass du das Sparziel "{{ goal.title }}" löschen möchtest?</p>
+                                                        <p class="text-danger">Diese Aktion kann nicht rückgängig gemacht werden!</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                                        <a href="{% url 'delete_saving_goal' goal.id %}" class="btn btn-danger">Löschen</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>

@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Ausgabe hinzufügen{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Ausgabe hinzufügen</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'expense_list' %}">Ausgaben</a></li>
+                    <li class="breadcrumb-item active">Neue Ausgabe</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.category|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.amount|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="other_category_group" style="display: none;">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="other_category">Neue Kategorie</label>
+                                    <input type="text" class="form-control" id="other_category" name="other_category">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.date|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="id_receipt_image" class="form-label">Beleg (optional)</label>
+                                <div class="input-group mb-3">
+                                    <input type="file" class="form-control" id="id_receipt_image" name="receipt_image" accept="image/*">
+                                    <label class="input-group-text" for="id_receipt_image"><i class="bi bi-camera"></i></label>
+                                </div>
+                                <small class="form-text text-muted">Foto oder Scan des Kassenbelegs (max. 5 MB)</small>
+
+                                <div class="mt-3 text-center">
+                                    <img id="receipt_preview" src="#" alt="Beleg-Vorschau" style="max-width: 100%; max-height: 300px; display: none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Ausgabe speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Tipps</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-lightbulb text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Kategorisiere richtig</h6>
+                            <p class="mb-0 text-muted small">Genau kategorisierte Ausgaben helfen dir, den Überblick zu behalten.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-camera text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Belege fotografieren</h6>
+                            <p class="mb-0 text-muted small">Fotografiere deine Belege direkt nach dem Einkauf, um sie nicht zu verlieren.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-calendar-check text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Regelmäßig erfassen</h6>
+                            <p class="mb-0 text-muted small">Trage deine Ausgaben zeitnah ein, um nichts zu vergessen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Budget-Status</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if current_budget %}
+                    <p class="text-muted mb-3">Verbleibend für {{ current_month }}:</p>
+
+                    {% for category in budget_overview %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span><i class="bi bi-{{ category.icon }} me-2"></i> {{ category.category }}</span>
+                            <span class="fw-bold {% if category.remaining < 0 %}text-danger{% endif %}">
+                                {{ category.remaining|floatformat:2 }} €
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 5px;">
+                            {% if category.percentage > 90 %}
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ category.percentage }}%"></div>
+                            {% elif category.percentage > 75 %}
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ category.percentage }}%"></div>
+                            {% else %}
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ category.percentage }}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-wallet2 text-muted fs-1"></i>
+                        <p class="mt-2 mb-3">Du hast noch kein Budget für diesen Monat festgelegt.</p>
+                        <a href="{% url 'create_budget' %}" class="btn btn-sm btn-primary">Budget erstellen</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Spezifisches JavaScript für das Ausgabenformular
+    document.addEventListener('DOMContentLoaded', function() {
+        const categorySelect = document.getElementById('id_category');
+        const otherCategoryField = document.getElementById('other_category_group');
+
+        if (categorySelect && otherCategoryField) {
+            categorySelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    otherCategoryField.style.display = 'block';
+                } else {
+                    otherCategoryField.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
