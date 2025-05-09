@@ -79,7 +79,7 @@
                         <div>
                             <h6 class="text-muted mb-1">Gesamtausgaben</h6>
                             <div class="d-flex align-items-center">
-                                <h3 class="mb-0 me-2">{{ total_expenses|floatformat:0 }} €</h3>
+                                <h3 class="mb-0 me-2">{{ total_expenses|floatformat:0 }} CHF</h3>
                                 {% if total_trend > 0 %}
                                 <span class="trend-arrow trend-up"><i class="bi bi-arrow-up"></i> {{ total_trend|floatformat:1 }}%</span>
                                 {% elif total_trend < 0 %}
@@ -104,7 +104,7 @@
                         <div>
                             <h6 class="text-muted mb-1">Durchschnitt/Monat</h6>
                             <div class="d-flex align-items-center">
-                                <h3 class="mb-0 me-2">{{ avg_per_month|floatformat:0 }} €</h3>
+                                <h3 class="mb-0 me-2">{{ avg_per_month|floatformat:0 }} CHF</h3>
                             </div>
                         </div>
                     </div>
@@ -122,7 +122,7 @@
                         <div>
                             <h6 class="text-muted mb-1">Höchste Ausgabe</h6>
                             <div class="d-flex align-items-center">
-                                <h3 class="mb-0 me-2">{{ highest_expense|floatformat:0 }} €</h3>
+                                <h3 class="mb-0 me-2">{{ highest_expense|floatformat:0 }} CHF</h3>
                             </div>
                         </div>
                     </div>
@@ -207,7 +207,7 @@
                                             <span>{{ category.name }}</span>
                                         </div>
                                     </td>
-                                    <td>{{ category.amount|floatformat:2 }} €</td>
+                                    <td>{{ category.amount|floatformat:2 }} CHF</td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="progress flex-grow-1 me-2" style="height: 6px;">
@@ -256,7 +256,7 @@
                                         <i class="bi bi-{{ expense.category.icon }} me-1"></i> {{ expense.category.name }} • {{ expense.date|date:"d.m.Y" }}
                                     </div>
                                 </div>
-                                <span class="fw-bold">{{ expense.amount|floatformat:2 }} €</span>
+                                <span class="fw-bold">{{ expense.amount|floatformat:2 }} CHF</span>
                             </div>
                         </div>
                         {% endfor %}
@@ -369,7 +369,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.raw + ' €';
+                                    return context.raw + ' CHF';
                                 }
                             }
                         }
@@ -379,7 +379,7 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return value + ' €';
+                                    return value + ' CHF';
                                 }
                             }
                         }
@@ -443,7 +443,7 @@
                             callbacks: {
                                 label: function(context) {
                                     const label = context.label || '';
-                                    const value = context.raw + ' €';
+                                    const value = context.raw + ' CHF';
                                     const percentage = Math.round(context.raw / chartData.total * 100) + '%';
                                     return `${label}: ${value} (${percentage})`;
                                 }

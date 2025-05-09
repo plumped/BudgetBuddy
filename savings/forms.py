@@ -1,5 +1,5 @@
 from django import forms
-from django.utils import timezone
+from django.utils.timezone import localdate
 from .models import SavingGoal, SavingTransaction
 
 
@@ -22,8 +22,12 @@ class SavingGoalForm(forms.ModelForm):
 
 class SavingTransactionForm(forms.ModelForm):
     date = forms.DateField(
-        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-        initial=timezone.now().date()
+        widget=forms.DateInput(
+            attrs={'type': 'date', 'class': 'form-control'},
+            format='%Y-%m-%d'  # wichtig
+        ),
+        initial=localdate,
+        input_formats=['%Y-%m-%d']  # Format auch beim Einlesen akzeptieren
     )
 
     class Meta:

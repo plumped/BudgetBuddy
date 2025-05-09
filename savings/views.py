@@ -2,15 +2,33 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import Sum
 
 from .models import SavingGoal, SavingTransaction
 from .forms import SavingGoalForm, SavingTransactionForm
+from datetime import date
 
 
 @login_required
 def saving_goals_list(request):
     goals = SavingGoal.objects.filter(family=request.user.family).order_by('-created_at')
-    return render(request, 'savings/goals_list.html', {'goals': goals})
+
+    # Gesamt gespart
+    total_saved = goals.aggregate(Sum('current_amount'))['current_amount__sum'] or 0
+
+    # Nächstes Zieldatum in Tagen berechnen
+    upcoming_goals = goals.filter(target_date__isnull=False, target_date__gte=date.today()).order_by('target_date')
+    if upcoming_goals.exists():
+        next_target_days = (upcoming_goals.first().target_date - date.today()).days
+    else:
+        next_target_days = None
+
+    context = {
+        'goals': goals,
+        'total_saved': total_saved,
+        'next_target_days': next_target_days,
+    }
+    return render(request, 'savings/goals_list.html', context)
 
 
 @login_required
@@ -37,7 +55,7 @@ def saving_goal_detail(request, goal_id):
             messages.success(request, 'Transaktion erfolgreich gespeichert!')
             return redirect('saving_goal_detail', goal_id=goal.id)
     else:
-        form = SavingTransactionForm(initial={'date': timezone.now().date()})
+        form = SavingTransactionForm()
 
     # Berechne Tage bis zum Zieldatum
     days_remaining = None

@@ -18,7 +18,7 @@
             <div class="row">
                 <div class="col-md-4 border-end">
                     <h5 class="card-title text-muted">Ausgaben diesen Monat</h5>
-                    <h2 class="display-6">{{ total_expenses|floatformat:2 }} €</h2>
+                    <h2 class="display-6">{{ total_expenses|floatformat:2 }} CHF</h2>
                 </div>
                 <div class="col-md-4 border-end">
                     <h5 class="card-title text-muted">Aktive Sparziele</h5>
@@ -50,7 +50,7 @@
                                     <span>{{ category.category }}</span>
                                 </div>
                                 <div>
-                                    <span class="fw-bold">{{ category.spent|floatformat:2 }} €</span> / {{ category.budget|floatformat:2 }} €
+                                    <span class="fw-bold">{{ category.spent|floatformat:2 }} CHF</span> / {{ category.budget|floatformat:2 }} CHF
                                 </div>
                             </div>
                             <div class="progress" style="height: 10px;">
@@ -62,7 +62,7 @@
                                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ category.percentage }}%" aria-valuenow="{{ category.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
                                 {% endif %}
                             </div>
-                            <small class="text-muted">Verbleibend: {{ category.remaining|floatformat:2 }} €</small>
+                            <small class="text-muted">Verbleibend: {{ category.remaining|floatformat:2 }} CHF</small>
                         </div>
                         {% endfor %}
                     {% else %}
@@ -91,7 +91,7 @@
                                 <a href="{% url 'saving_goal_detail' goal.id %}" class="text-decoration-none text-dark">
                                     <h6 class="mb-0">{{ goal.title }}</h6>
                                 </a>
-                                <span>{{ goal.current_amount|floatformat:0 }} € / {{ goal.target_amount|floatformat:0 }} €</span>
+                                <span>{{ goal.current_amount|floatformat:0 }} CHF / {{ goal.target_amount|floatformat:0 }} CHF</span>
                             </div>
                             <div class="progress" style="height: 10px;">
                                 <div class="progress-bar bg-info" role="progressbar" style="width: {{ goal.progress_percentage }}%" aria-valuenow="{{ goal.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
@@ -146,7 +146,7 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ expense.description }}</td>
-                                <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} €</td>
+                                <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} CHF</td>
                             </tr>
                             {% endfor %}
                         </tbody>

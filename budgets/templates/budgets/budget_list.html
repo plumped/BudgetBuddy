@@ -42,7 +42,7 @@
                         <div>
                             <h6 class="text-muted mb-1">Aktuelles Budget</h6>
                             {% if current_budget %}
-                                <h2 class="display-5 mb-0">{{ current_budget.total_amount|floatformat:0 }} €</h2>
+                                <h2 class="display-5 mb-0">{{ current_budget.total_amount|floatformat:0 }} CHF</h2>
                             {% else %}
                                 <h2 class="display-5 mb-0">-</h2>
                             {% endif %}
@@ -103,8 +103,8 @@
                                     </a>
                                 </td>
                                 <td>{{ budget.categories.count }}</td>
-                                <td>{{ budget.total_amount|floatformat:2 }} €</td>
-                                <td>{{ budget.remaining_amount|floatformat:2 }} €</td>
+                                <td>{{ budget.total_amount|floatformat:2 }} CHF</td>
+                                <td>{{ budget.remaining_amount|floatformat:2 }} CHF</td>
                                 <td>
                                     {% if budget.status == 'on_track' %}
                                         <span class="badge bg-success">Im Plan</span>

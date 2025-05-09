@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return context.raw + ' €';
+                                return context.raw + ' CHF';
                             }
                         }
                     }
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return value + ' €';
+                                return value + ' CHF';
                             }
                         }
                     }
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
-                                const value = context.raw + ' €';
+                                const value = context.raw + ' CHF';
                                 const percentage = Math.round(context.raw / chartData.total * 100) + '%';
                                 return `${label}: ${value} (${percentage})`;
                             }

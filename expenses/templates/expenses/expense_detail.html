@@ -24,7 +24,7 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h2 class="card-title h4">{{ expense.description }}</h2>
-                        <h2>{{ expense.amount|floatformat:2 }} €</h2>
+                        <h2>{{ expense.amount|floatformat:2 }} CHF</h2>
                     </div>
 
                     <div class="row mb-4">
@@ -95,16 +95,16 @@
                         <label class="form-label text-muted">Budget für {{ expense.category.name }}</label>
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span>Ausgegeben</span>
-                            <span class="fw-bold">{{ category_spent|floatformat:2 }} €</span>
+                            <span class="fw-bold">{{ category_spent|floatformat:2 }} CHF</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span>Budget</span>
-                            <span class="fw-bold">{{ budget_category.amount|floatformat:2 }} €</span>
+                            <span class="fw-bold">{{ budget_category.amount|floatformat:2 }} CHF</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span>Verbleibend</span>
                             <span class="fw-bold {% if category_remaining < 0 %}text-danger{% endif %}">
-                                {{ category_remaining|floatformat:2 }} €
+                                {{ category_remaining|floatformat:2 }} CHF
                             </span>
                         </div>
                         <div class="progress" style="height: 10px;">
@@ -138,7 +138,7 @@
                                 <div class="fw-bold">{{ similar.description }}</div>
                                 <small class="text-muted">{{ similar.date|date:"d.m.Y" }}</small>
                             </div>
-                            <span class="badge bg-primary rounded-pill">{{ similar.amount|floatformat:2 }} €</span>
+                            <span class="badge bg-primary rounded-pill">{{ similar.amount|floatformat:2 }} CHF</span>
                         </a>
                         {% empty %}
                         <div class="list-group-item border-0 text-center py-3">

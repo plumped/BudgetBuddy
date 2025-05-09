@@ -1,3 +1,4 @@
+from django.db import models
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -6,6 +7,10 @@ import datetime
 
 from .models import Budget, BudgetCategory, Category
 from .forms import BudgetForm, BudgetCategoryFormSet
+from django.shortcuts import render, get_object_or_404
+from expenses.models import Expense
+from .models import Budget
+import json
 
 
 @login_required
@@ -17,12 +22,57 @@ def budget_list(request):
 @login_required
 def budget_detail(request, budget_id):
     budget = get_object_or_404(Budget, id=budget_id, family=request.user.family)
-    return render(request, 'budgets/budget_detail.html', {'budget': budget})
+
+    # Kategorien-Daten für Tabelle
+    budget_categories = []
+    for bc in budget.categories.select_related('category'):
+        spent = Expense.objects.filter(
+            family=budget.family,
+            category=bc.category,
+            date__year=budget.month.year,
+            date__month=budget.month.month
+        ).aggregate(total=models.Sum('amount'))['total'] or 0
+
+        remaining = bc.amount - spent
+        percentage = (spent / bc.amount * 100) if bc.amount > 0 else 0
+
+        budget_categories.append({
+            'name': bc.category.name,
+            'icon': bc.category.icon,
+            'budget': bc.amount,
+            'spent': spent,
+            'remaining': remaining,
+            'percentage': percentage
+        })
+
+    # Chart-Daten vorbereiten
+    chart_data = {
+        'labels': [cat['name'] for cat in budget_categories],
+        'values': [float(cat['spent']) for cat in budget_categories],
+        'total': float(sum(cat['spent'] for cat in budget_categories))
+    }
+
+    # Letzte Ausgaben im Monat
+    recent_expenses = Expense.objects.filter(
+        family=budget.family,
+        date__year=budget.month.year,
+        date__month=budget.month.month
+    ).select_related('category').order_by('-date')[:10]
+
+    context = {
+        'budget': budget,
+        'budget_categories': budget_categories,
+        'total_spent': budget.total_spent,
+        'budget_remaining': budget.remaining_amount,
+        'chart_data': json.dumps(chart_data),
+        'recent_expenses': recent_expenses
+    }
+
+    return render(request, 'budgets/budget_detail.html', context)
 
 
 @login_required
 def create_budget(request):
-    # Prüfen, ob bereits ein Budget für den aktuellen Monat existiert
     today = timezone.now().date()
     current_month_start = today.replace(day=1)
     next_month = (today.replace(day=1) + datetime.timedelta(days=32)).replace(day=1)
@@ -35,17 +85,17 @@ def create_budget(request):
         )
         return redirect('edit_budget', budget_id=existing_budget.id)
     except Budget.DoesNotExist:
-        # Kein existierendes Budget gefunden, also neu erstellen
         pass
 
     if request.method == 'POST':
         form = BudgetForm(request.POST)
+        formset = BudgetCategoryFormSet(request.POST)  # <-- IMMER initialisieren
+
         if form.is_valid():
             budget = form.save(commit=False)
             budget.family = request.user.family
             budget.save()
 
-            # Formset für Budgetkategorien
             formset = BudgetCategoryFormSet(request.POST, instance=budget)
             if formset.is_valid():
                 formset.save()
@@ -55,7 +105,6 @@ def create_budget(request):
         form = BudgetForm()
         formset = BudgetCategoryFormSet()
 
-    # Hole alle verfügbaren Kategorien für das Formular
     categories = Category.objects.all()
 
     context = {
@@ -64,6 +113,7 @@ def create_budget(request):
         'categories': categories,
     }
     return render(request, 'budgets/create_budget.html', context)
+
 
 
 @login_required

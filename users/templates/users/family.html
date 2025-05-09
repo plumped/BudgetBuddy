@@ -85,7 +85,11 @@
                                                 {% else %}
                                                 <li><a class="dropdown-item" href="#">Rolle ändern</a></li>
                                                 <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#">Entfernen</a></li>
+                                                <li>
+                                                  <a class="dropdown-item text-danger" href="{% url 'remove_family_member' member.id %}">
+                                                    Entfernen
+                                                  </a>
+                                                </li>
                                                 {% endif %}
                                             </ul>
                                         </div>

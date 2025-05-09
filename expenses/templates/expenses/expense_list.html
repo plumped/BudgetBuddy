@@ -107,7 +107,7 @@
                     <div>
                         <h5 class="mb-0">Ausgabenübersicht</h5>
                         {% if total_amount %}
-                        <p class="text-muted mb-0 small">Gesamt: {{ total_amount|floatformat:2 }} €</p>
+                        <p class="text-muted mb-0 small">Gesamt: {{ total_amount|floatformat:2 }} CHF</p>
                         {% endif %}
                     </div>
                     <div class="d-flex">
@@ -161,7 +161,7 @@
                                         <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} €</td>
+                                    <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} CHF</td>
                                     <td class="text-end">
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">

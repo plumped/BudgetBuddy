@@ -58,6 +58,11 @@ def profile(request):
 @login_required
 def family_view(request):
     family = request.user.family
+
+    if not family:
+        messages.error(request, "Du bist aktuell keiner Familie zugeordnet.")
+        return redirect('dashboard')  # oder wohin du willst
+
     family_members = CustomUser.objects.filter(family=family)
 
     if request.method == 'POST':
@@ -78,6 +83,7 @@ def family_view(request):
     return render(request, 'users/family.html', context)
 
 
+
 @login_required
 def add_family_member(request):
     if request.method == 'POST':
@@ -88,7 +94,7 @@ def add_family_member(request):
 
             # Mit bestehender Familie des aktuellen Benutzers verknüpfen
             member.family = request.user.family
-
+            member.role = form.cleaned_data.get('role')  # <-- hinzufügen!
             # Passwort setzen und Benutzer speichern
             member.set_password(form.cleaned_data.get('password1'))
             member.save()
@@ -100,6 +106,18 @@ def add_family_member(request):
 
     return render(request, 'users/add_family_member.html', {'form': form})
 
+@login_required
+def remove_family_member(request, member_id):
+    member = CustomUser.objects.filter(id=member_id, family=request.user.family).first()
+    if not member:
+        messages.error(request, "Mitglied nicht gefunden oder gehört nicht zu deiner Familie.")
+    elif member == request.user:
+        messages.error(request, "Du kannst dich nicht selbst entfernen.")
+    else:
+        member.family = None
+        member.save()
+        messages.success(request, f"{member.username} wurde aus der Familie entfernt.")
+    return redirect('family')
 
 # users/forms.py
 from django import forms

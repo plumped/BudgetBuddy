@@ -8,6 +8,8 @@ import json
 import datetime
 from django.db.models import Sum, Avg, Max, Count, F, Q
 from django.db.models.functions import TruncMonth, TruncDay
+from django.utils.timezone import localdate
+
 
 from budgets.models import Budget, BudgetCategory, Category
 from .models import Expense
@@ -16,8 +18,59 @@ from .forms import ExpenseForm
 
 @login_required
 def expense_list(request):
-    expenses = Expense.objects.filter(family=request.user.family).order_by('-date')
-    return render(request, 'expenses/expense_list.html', {'expenses': expenses})
+    family = request.user.family
+    today = timezone.now().date()
+
+    # Parameter aus GET
+    period = request.GET.get('period', 'all')
+    category_id = request.GET.get('category')
+    sort = request.GET.get('sort', 'date_desc')
+
+    # Basis-QuerySet
+    expenses = Expense.objects.filter(family=family)
+
+    # Zeitraumfilter
+    if period == 'month':
+        expenses = expenses.filter(date__year=today.year, date__month=today.month)
+    elif period == 'last_month':
+        last_month = (today.replace(day=1) - timezone.timedelta(days=1))
+        expenses = expenses.filter(date__year=last_month.year, date__month=last_month.month)
+    elif period == '3months':
+        three_months_ago = today - timezone.timedelta(days=90)
+        expenses = expenses.filter(date__gte=three_months_ago)
+    elif period == 'year':
+        expenses = expenses.filter(date__year=today.year)
+
+    # Kategoriefilter
+    if category_id:
+        expenses = expenses.filter(category_id=category_id)
+
+    # Sortierung
+    if sort == 'date_asc':
+        expenses = expenses.order_by('date')
+    elif sort == 'amount_desc':
+        expenses = expenses.order_by('-amount')
+    elif sort == 'amount_asc':
+        expenses = expenses.order_by('amount')
+    else:  # default
+        expenses = expenses.order_by('-date')
+
+    # Gesamtbetrag berechnen
+    total_amount = expenses.aggregate(total=Sum('amount'))['total'] or 0
+
+    # Kategorienliste für Sidebar
+    categories = Category.objects.all()
+
+    context = {
+        'expenses': expenses,
+        'total_amount': total_amount,
+        'categories': categories,
+        'period': period,
+        'category': category_id,
+        'sort': sort
+    }
+
+    return render(request, 'expenses/expense_list.html', context)
 
 
 @login_required
@@ -28,11 +81,16 @@ def add_expense(request):
             expense = form.save(commit=False)
             expense.family = request.user.family
             expense.user = request.user
+
+            # Sicherstellen, dass immer ein Datum gesetzt ist
+            if not expense.date:
+                expense.date = timezone.now().date()
+
             expense.save()
             messages.success(request, 'Ausgabe erfolgreich hinzugefügt!')
             return redirect('expense_list')
     else:
-        form = ExpenseForm(initial={'date': timezone.now().date()})
+        form = ExpenseForm(initial={'date': localdate()})
 
     return render(request, 'expenses/add_expense.html', {'form': form})
 
@@ -270,7 +328,7 @@ def expense_analysis(request):
     if highest_expense > avg_per_month * 0.5:
         insights.append({
             'title': 'Hohe Einzelausgabe',
-            'description': f'Deine höchste Einzelausgabe im Zeitraum beträgt {highest_expense:.2f} €, was mehr als 50% deiner durchschnittlichen Monatsausgaben entspricht.',
+            'description': f'Deine höchste Einzelausgabe im Zeitraum beträgt {highest_expense:.2f} CHF, was mehr als 50% deiner durchschnittlichen Monatsausgaben entspricht.',
             'recommendation': 'Prüfe, ob diese hohe Ausgabe geplant war oder ob du in Zukunft für solche Ausgaben besser vorsorgen solltest.',
             'icon': 'exclamation-triangle',
             'type': 'warning'

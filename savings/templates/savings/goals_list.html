@@ -41,7 +41,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Gesamt gespart</h6>
-                            <h2 class="display-5 mb-0">{{ total_saved|floatformat:0 }} €</h2>
+                            <h2 class="display-5 mb-0">{{ total_saved|floatformat:0 }} CHF</h2>
                         </div>
                         <div class="fs-1 text-info">
                             <i class="bi bi-cash-stack"></i>
@@ -72,7 +72,7 @@
         </div>
     </div>
 
-    <!-- Tabs für verschiedene Ansichten -->
+    <!-- Tabs -->
     <ul class="nav nav-tabs mb-4" id="goalsTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="cards-tab" data-bs-toggle="tab" data-bs-target="#cards-view" type="button" role="tab">
@@ -121,8 +121,8 @@
                             <p class="card-text text-muted small mb-3">{{ goal.description|truncatechars:100 }}</p>
 
                             <div class="d-flex justify-content-between text-muted small mb-2">
-                                <span>Gespart: {{ goal.current_amount|floatformat:0 }} €</span>
-                                <span>Ziel: {{ goal.target_amount|floatformat:0 }} €</span>
+                                <span>Gespart: {{ goal.current_amount|floatformat:0 }} CHF</span>
+                                <span>Ziel: {{ goal.target_amount|floatformat:0 }} CHF</span>
                             </div>
 
                             <div class="progress mb-3" style="height: 8px;">
@@ -148,7 +148,6 @@
                             </div>
                         </div>
 
-                        <!-- Fortschrittsbalken am unteren Rand der Karte -->
                         <div class="progress" style="height: 4px; border-radius: 0;">
                             <div class="progress-bar bg-success" role="progressbar"
                                  style="width: {{ goal.progress_percentage|floatformat:0 }}%;"></div>
@@ -220,8 +219,8 @@
                                             </span>
                                         </div>
                                     </td>
-                                    <td>{{ goal.current_amount|floatformat:0 }} €</td>
-                                    <td>{{ goal.target_amount|floatformat:0 }} €</td>
+                                    <td>{{ goal.current_amount|floatformat:0 }} CHF</td>
+                                    <td>{{ goal.target_amount|floatformat:0 }} CHF</td>
                                     <td>
                                         {% if goal.target_date %}
                                             {{ goal.target_date|date:"d.m.Y" }}
@@ -267,3 +266,22 @@
                                         </div>
                                     </td>
                                 </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <h3>Noch keine Sparziele</h3>
+                        <p class="text-muted mb-4">Erstelle dein erstes Sparziel und verfolge deinen Fortschritt.</p>
+                        <a href="{% url 'create_saving_goal' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Jetzt Sparziel erstellen
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

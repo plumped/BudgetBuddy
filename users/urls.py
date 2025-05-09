@@ -9,4 +9,6 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('family/', views.family_view, name='family'),
     path('family/add-member/', views.add_family_member, name='add_family_member'),
+    path('family/remove-member/<int:member_id>/', views.remove_family_member, name='remove_family_member'),
+
 ]

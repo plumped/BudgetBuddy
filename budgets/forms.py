@@ -5,6 +5,7 @@ from .models import Budget, BudgetCategory, Category
 
 class BudgetForm(forms.ModelForm):
     month = forms.DateField(
+        input_formats=['%Y-%m'],
         widget=forms.DateInput(attrs={'type': 'month', 'class': 'form-control'}),
         initial=timezone.now().date().replace(day=1)
     )

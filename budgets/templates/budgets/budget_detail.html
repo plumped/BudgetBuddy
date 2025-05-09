@@ -31,7 +31,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Gesamtbudget</h6>
-                            <h2 class="display-5 mb-0">{{ budget.total_amount|floatformat:0 }} €</h2>
+                            <h2 class="display-5 mb-0">{{ budget.total_amount|floatformat:0 }} CHF</h2>
                         </div>
                         <div class="fs-1 text-primary">
                             <i class="bi bi-wallet2"></i>
@@ -47,7 +47,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Ausgegeben</h6>
-                            <h2 class="display-5 mb-0">{{ total_spent|floatformat:0 }} €</h2>
+                            <h2 class="display-5 mb-0">{{ total_spent|floatformat:0 }} CHF</h2>
                         </div>
                         <div class="fs-1 text-success">
                             <i class="bi bi-cash-stack"></i>
@@ -63,7 +63,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Verfügbar</h6>
-                            <h2 class="display-5 mb-0">{{ budget_remaining|floatformat:0 }} €</h2>
+                            <h2 class="display-5 mb-0">{{ budget_remaining|floatformat:0 }} CHF</h2>
                         </div>
                         <div class="fs-1 text-warning">
                             <i class="bi bi-piggy-bank"></i>
@@ -104,10 +104,10 @@
                                             <span>{{ category.name }}</span>
                                         </div>
                                     </td>
-                                    <td>{{ category.budget|floatformat:2 }} €</td>
-                                    <td>{{ category.spent|floatformat:2 }} €</td>
+                                    <td>{{ category.budget|floatformat:2 }} CHF</td>
+                                    <td>{{ category.spent|floatformat:2 }} CHF</td>
                                     <td class="{% if category.remaining < 0 %}text-danger fw-bold{% endif %}">
-                                        {{ category.remaining|floatformat:2 }} €
+                                        {{ category.remaining|floatformat:2 }} CHF
                                     </td>
                                     <td>
                                         <div class="progress" style="height: 8px;">
@@ -171,7 +171,7 @@
                                         <i class="bi bi-{{ expense.category.icon }} me-1"></i> {{ expense.category.name }}
                                     </td>
                                     <td>{{ expense.description }}</td>
-                                    <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} €</td>
+                                    <td class="text-end fw-bold">{{ expense.amount|floatformat:2 }} CHF</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -242,3 +242,5 @@
             });
         }
     });
+</script>
+{% endblock %}
