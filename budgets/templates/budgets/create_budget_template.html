@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Budget erstellen{% endblock %}
+
+{% block extra_css %}
+<style>
+    .template-card {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .template-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .template-selected {
+        border-color: var(--bs-primary);
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if not template %}
+    <!-- Template-Auswahl -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Budget-Vorlagen auswählen</h2>
+            <p class="text-muted">Starte mit einer Vorlage oder erstelle ein neues Budget von Grund auf.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Standard-Vorlage -->
+        <div class="col-md-4 mb-3">
+            <div class="card template-card border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-plus-circle fs-1 text-primary mb-3"></i>
+                    <h5>Neues Budget</h5>
+                    <p class="text-muted small">Erstelle ein Budget von Grund auf</p>
+                    <a href="{% url 'create_budget' %}" class="btn btn-primary">Jetzt erstellen</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vorheriges Budget kopieren -->
+        {% if previous_budget %}
+        <div class="col-md-4 mb-3">
+            <div class="card template-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-copy fs-1 text-info mb-3"></i>
+                    <h5>Vorheriges Budget kopieren</h5>
+                    <p class="text-muted small">{{ previous_budget.month|date:"F Y" }}</p>
+                    <a href="{% url 'copy_budget' previous_budget.id %}" class="btn btn-info">Kopieren</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Gespeicherte Vorlagen -->
+        {% for saved_template in templates %}
+        <div class="col-md-4 mb-3">
+            <div class="card template-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-bookmark fs-1 text-success mb-3"></i>
+                    <h5>{{ saved_template.name }}</h5>
+                    <p class="text-muted small">{{ saved_template.description }}</p>
+                    <a href="{% url 'create_budget' %}?template={{ saved_template.id }}" class="btn btn-success">Verwenden</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center">
+        <a href="{% url 'create_budget_template' %}" class="btn btn-outline-primary">
+            <i class="bi bi-plus me-1"></i> Neue Vorlage erstellen
+        </a>
+    </div>
+    {% else %}
+
+    <!-- Budget-Erstellung aus Vorlage -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Budget erstellen: {{ template.name }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'budget_list' %}">Budgets</a></li>
+                    <li class="breadcrumb-item active">Neues Budget</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="mb-3">Budget-Informationen</h5>
+                                {{ form|crispy }}
+
+                                {% if form.carry_over %}
+                                <div class="form-check mb-3">
+                                    {{ form.carry_over }}
+                                    <label class="form-check-label" for="{{ form.carry_over.id_for_label }}">
+                                        {{ form.carry_over.help_text }}
+                                    </label>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Kategorien</h5>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="import_previous_btn">
+                                        <i class="bi bi-arrow-down me-1"></i> Vorheriges Budget übernehmen
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="add_category_btn">
+                                        <i class="bi bi-plus-lg me-1"></i> Kategorie hinzufügen
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="category_formset">
+                                {{ formset.management_form }}
+
+                                {% for form in formset %}
+                                <div class="card mb-3 category-form">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                {{ form.category|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                {{ form.amount|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check mt-4">
+                                                    {{ form.is_flexible }}
+                                                    <label class="form-check-label" for="{{ form.is_flexible.id_for_label }}">
+                                                        Flexibel
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {% if formset.can_delete %}
+                                        <div class="form-check">
+                                            {{ form.DELETE|as_crispy_field }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="text-end mt-3">
+                                <h6>Gesamtbudget: <span id="total_budget">0.00</span> CHF</h6>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'budget_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-wallet2 me-1"></i> Budget erstellen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Budget-Hilfe</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-info-circle text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Flexible Kategorien</h6>
+                            <p class="mb-0 text-muted small">Kategorien als flexibel markieren, wenn sie Geld von anderen Kategorien leihen können.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-3">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-arrow-repeat text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Budget-Typ</h6>
+                            <p class="mb-0 text-muted small">Wähle zwischen monatlichen, wöchentlichen oder benutzerdefinierten Zeiträumen.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex">
+                        <div class="icon-bg bg-primary-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-bookmark text-primary"></i>
+                        </div>
+                        <div>
+                            <h6>Als Vorlage speichern</h6>
+                            <p class="mb-0 text-muted small">Speichere erfolgreiche Budget-Konfigurationen für die Zukunft.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100" id="save_as_template_btn">
+                        <i class="bi bi-bookmark-plus me-1"></i> Als Vorlage speichern
+                    </button>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Vorheriges Budget</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if previous_budget %}
+                    <div class="text-center mb-3">
+                        <h6>{{ previous_budget.month|date:"F Y" }}</h6>
+                        <h4>{{ previous_budget.total_amount|floatformat:2 }} CHF</h4>
+                        <span class="badge bg-{{ previous_budget.status }}">{{ previous_budget.get_status_display }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Ausgegeben:</small>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar" style="width: {{ previous_budget.percentage }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span>{{ previous_budget.total_spent|floatformat:2 }} CHF</span>
+                            <span>{{ previous_budget.percentage|floatformat:0 }}%</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="copyPreviousBudget()">
+                        <i class="bi bi-copy me-1"></i> Kategorien kopieren
+                    </button>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        <p>Kein vorheriges Budget vorhanden.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dynamisches Formset-Handling
+        const addCategoryBtn = document.getElementById('add_category_btn');
+        const categoryContainer = document.getElementById('category_formset');
+        const totalBudgetSpan = document.getElementById('total_budget');
+
+        if (addCategoryBtn && categoryContainer) {
+            addCategoryBtn.addEventListener('click', function() {
+                const forms = categoryContainer.getElementsByClassName('category-form');
+                const formNum = forms.length;
+                const totalForms = document.getElementById('id_budgetcategory_set-TOTAL_FORMS');
+
+                // Klone das letzte Formular
+                const newForm = forms[forms.length - 1].cloneNode(true);
+
+                // Aktualisiere IDs und Namen
+                let formRegex = RegExp(`budgetcategory_set-(\\d){1,}-`,'g');
+                newForm.innerHTML = newForm.innerHTML.replace(formRegex, `budgetcategory_set-${formNum}-`);
+
+                // Setze Werte zurück
+                const inputs = newForm.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.type === 'text' || input.type === 'number') {
+                        input.value = '';
+                    } else if (input.type === 'checkbox') {
+                        input.checked = false;
+                    }
+                });
+
+                // Füge das neue Formular hinzu
+                categoryContainer.appendChild(newForm);
+
+                // Aktualisiere den Zähler
+                totalForms.value = formNum + 1;
+
+                // Event Listener für Betrag-Änderungen hinzufügen
+                addAmountChangeListeners();
+            });
+        }
+
+        // Budget-Typ Änderung
+        const budgetTypeSelect = document.getElementById('id_budget_type');
+        const endDateField = document.getElementById('id_end_date');
+
+        if (budgetTypeSelect && endDateField) {
+            budgetTypeSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    endDateField.style.display = 'block';
+                } else {
+                    endDateField.style.display = 'none';
+                }
+            });
+
+            // Initial check
+            if (budgetTypeSelect.value === 'custom') {
+                endDateField.style.display = 'block';
+            }
+        }
+
+        // Gesamtbudget berechnen
+        function calculateTotalBudget() {
+            let total = 0;
+            const amountInputs = document.querySelectorAll('#category_formset input[name$="-amount"]');
+
+            amountInputs.forEach(input => {
+                if (input.value) {
+                    total += parseFloat(input.value);
+                }
+            });
+
+            if (totalBudgetSpan) {
+                totalBudgetSpan.textContent = total.toFixed(2);
+            }
+        }
+
+        // Event Listener für Betrag-Änderungen
+        function addAmountChangeListeners() {
+            const amountInputs = document.querySelectorAll('#category_formset input[name$="-amount"]');
+            amountInputs.forEach(input => {
+                input.removeEventListener('input', calculateTotalBudget);
+                input.addEventListener('input', calculateTotalBudget);
+            });
+        }
+
+        // Initial calculation
+        addAmountChangeListeners();
+        calculateTotalBudget();
+
+        // Vorlage speichern
+        const saveTemplateBtn = document.getElementById('save_as_template_btn');
+        if (saveTemplateBtn) {
+            saveTemplateBtn.addEventListener('click', function() {
+                // Modal für Template-Namen
+                const templateName = prompt('Name für die Budget-Vorlage:');
+                if (templateName) {
+                    // Hier würde AJAX-Call zum Speichern erfolgen
+                    console.log('Speichere Vorlage:', templateName);
+                }
+            });
+        }
+
+        // Vorheriges Budget importieren
+        const importPreviousBtn = document.getElementById('import_previous_btn');
+        if (importPreviousBtn) {
+            importPreviousBtn.addEventListener('click', function() {
+                if (confirm('Möchtest du die Kategorien vom vorherigen Budget übernehmen?')) {
+                    copyPreviousBudget();
+                }
+            });
+        }
+    });
+
+    // Vorheriges Budget kopieren
+    function copyPreviousBudget() {
+        // AJAX-Call zum Laden des vorherigen Budgets
+        fetch(`/budgets/previous/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Fülle Formular mit vorherigen Daten
+            data.categories.forEach((category, index) => {
+                // Implementiere das Befüllen der Kategorie-Felder
+            });
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden des vorherigen Budgets:', error);
+        });
+    }
+</script>
+{% endblock %}

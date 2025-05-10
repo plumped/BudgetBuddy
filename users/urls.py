@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from . import views  # This imports views from the users app
+from . import views
 
 urlpatterns = [
     path('register/', views.register, name='register'),
@@ -10,5 +10,10 @@ urlpatterns = [
     path('family/', views.family_view, name='family'),
     path('family/add-member/', views.add_family_member, name='add_family_member'),
     path('family/remove-member/<int:member_id>/', views.remove_family_member, name='remove_family_member'),
-
+    path('family/settings/', views.family_settings, name='family_settings'),
+    path('accounts/', views.account_list, name='account_list'),
+    path('accounts/create/', views.create_account, name='create_account'),
+    path('notifications/', views.notification_list, name='notification_list'),
+    path('notifications/settings/', views.notification_settings, name='notification_settings'),
+    path('personal-budget/', views.personal_budget_settings, name='personal_budget_settings'),
 ]
