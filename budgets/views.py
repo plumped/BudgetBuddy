@@ -15,8 +15,33 @@ import json
 
 @login_required
 def budget_list(request):
-    budgets = Budget.objects.filter(family=request.user.family).order_by('-month')
-    return render(request, 'budgets/budget_list.html', {'budgets': budgets})
+    family = request.user.family
+    budgets = Budget.objects.filter(family=family).order_by('-month')
+
+    # Aktuelles Budget ermitteln
+    today = timezone.now().date()
+    current_month_start = today.replace(day=1)
+    next_month = (today.replace(day=1) + datetime.timedelta(days=32)).replace(day=1)
+
+    try:
+        current_budget = Budget.objects.get(
+            family=family,
+            month__gte=current_month_start,
+            month__lt=next_month
+        )
+    except Budget.DoesNotExist:
+        current_budget = None
+
+    # Anzahl Kategorien
+    categories_count = Category.objects.count()
+
+    context = {
+        'budgets': budgets,
+        'current_budget': current_budget,
+        'categories_count': categories_count
+    }
+
+    return render(request, 'budgets/budget_list.html', context)
 
 
 @login_required
